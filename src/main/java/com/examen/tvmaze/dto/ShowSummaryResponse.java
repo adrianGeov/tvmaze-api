@@ -12,22 +12,25 @@ public class ShowSummaryResponse {
     private final String channel;
     private final String summary;
     private final List<String> genres;
+     private final List<CommentResponse> comments;
 
-    public ShowSummaryResponse(Long id, String name, String channel, String summary, List<String> genres) {
+    public ShowSummaryResponse(Long id, String name, String channel, String summary, List<String> genres, List<CommentResponse> comments) {
         this.id = id;
         this.name = name;
         this.channel = channel;
         this.summary = summary;
         this.genres = genres;
+        this.comments = comments;
     }
 
-    public static ShowSummaryResponse from(TvMazeShowSummary show) {
+    public static ShowSummaryResponse from(TvMazeShowSummary show, List<CommentResponse> comments) {
         return new ShowSummaryResponse(
                 show.getId(),
                 show.getName(),
                 show.resolveChannelName(),
                 show.getSummary(),
-                show.getGenres() == null ? List.of() : show.getGenres());
+                show.getGenres() == null ? List.of() : show.getGenres(),
+                comments);
     }
 
     public Long getId() {
@@ -48,6 +51,10 @@ public class ShowSummaryResponse {
 
     public List<String> getGenres() {
         return genres;
+    }
+
+    public List<CommentResponse> getComments() {
+        return comments;
     }
 
 

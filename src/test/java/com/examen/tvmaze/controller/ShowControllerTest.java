@@ -1,12 +1,15 @@
 package com.examen.tvmaze.controller;
 
+import com.examen.tvmaze.dto.CommentResponse;
 import com.examen.tvmaze.dto.ShowSummaryResponse;
 import com.examen.tvmaze.exception.ExternalServiceException;
+import com.examen.tvmaze.exception.GlobalExceptionHandler;
 import com.examen.tvmaze.exception.ShowNotFoundException;
 import com.examen.tvmaze.service.ShowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @WebMvcTest(ShowController.class)
+@Import(GlobalExceptionHandler.class)
 public class ShowControllerTest {
 
 
@@ -34,15 +38,18 @@ public class ShowControllerTest {
     @MockitoBean
     private ShowService showService;
 
-    @Test
-    void search_regresaArregloDeShows() throws Exception {
+   @Test
+    void search_regresaArregloDeShowsConComentarios() throws Exception {
         when(showService.searchShows("girls")).thenReturn(List.of(
-                new ShowSummaryResponse(139L, "Girls", "HBO", "<p>Resumen</p>", List.of("Drama"))));
+                new ShowSummaryResponse(139L, "Girls", "HBO", "<p>Resumen</p>", List.of("Drama"),
+                        List.of(new CommentResponse("Buena serie", 4)))));
 
         mockMvc.perform(get("/api/shows/search").param("q", "girls"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(139))
-                .andExpect(jsonPath("$[0].channel").value("HBO"));
+                .andExpect(jsonPath("$[0].channel").value("HBO"))
+                .andExpect(jsonPath("$[0].comments[0].comment").value("Buena serie"))
+                .andExpect(jsonPath("$[0].comments[0].rating").value(4));
     }
 
     @Test

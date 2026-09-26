@@ -6,7 +6,9 @@ import com.examen.tvmaze.client.dto.TvMazeSearchResult;
 import com.examen.tvmaze.client.dto.TvMazeShowSummary;
 import com.examen.tvmaze.dto.ShowSummaryResponse;
 import com.examen.tvmaze.exception.ShowNotFoundException;
+import com.examen.tvmaze.model.Comment;
 import com.examen.tvmaze.model.ShowCache;
+import com.examen.tvmaze.repository.CommentRepository;
 import com.examen.tvmaze.repository.ShowCacheRepository;
 
 import org.junit.jupiter.api.Test;
@@ -23,18 +25,23 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ShowServiceTest {
 
-    @Mock
+     @Mock
     private TvMazeClient tvMazeClient;
 
-     @Mock
+    @Mock
     private ShowCacheRepository showCacheRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @InjectMocks
     private ShowService showService;
@@ -49,6 +56,7 @@ public class ShowServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getChannel()).isEqualTo("HBO");
+        assertThat(result.get(0).getComments()).isEmpty();
     }
 
     @Test
@@ -64,13 +72,35 @@ public class ShowServiceTest {
     }
 
     @Test
-    void searchShows_sinResultados_regresaListaVacia() {
+    void searchShows_agregaComentariosPorShow() {
+        TvMazeShowSummary girls = new TvMazeShowSummary(139L, "Girls", null, List.of("Drama"),
+                new TvMazeChannel("HBO"), null);
+        TvMazeShowSummary other = new TvMazeShowSummary(200L, "Otro", null, List.of(),
+                new TvMazeChannel("CBS"), null);
+        when(tvMazeClient.searchShows("girls")).thenReturn(List.of(
+                new TvMazeSearchResult(0.9, girls),
+                new TvMazeSearchResult(0.5, other)));
+        when(commentRepository.findByShowIdIn(anyCollection())).thenReturn(List.of(
+                new Comment(139L, "Buena serie", 4),
+                new Comment(139L, "Me encanto", 5)));
+
+        List<ShowSummaryResponse> result = showService.searchShows("girls");
+
+        assertThat(result.get(0).getComments()).hasSize(2);
+        assertThat(result.get(0).getComments().get(0).getRating()).isEqualTo(4);
+        assertThat(result.get(1).getComments()).isEmpty();
+        verify(commentRepository, times(1)).findByShowIdIn(anyCollection());
+    }
+
+    @Test
+    void searchShows_sinResultados_noConsultaComentarios() {
         when(tvMazeClient.searchShows("zzz")).thenReturn(List.of());
 
         assertThat(showService.searchShows("zzz")).isEmpty();
+        verify(commentRepository, never()).findByShowIdIn(anyCollection());
     }
 
-   @Test
+    @Test
     void getShow_cuandoExisteEnCache_noConsultaTvMaze() {
         Map<String, Object> cached = Map.of("id", 1, "name", "Under the Dome");
         when(showCacheRepository.findById(1L)).thenReturn(Optional.of(new ShowCache(1L, cached)));
