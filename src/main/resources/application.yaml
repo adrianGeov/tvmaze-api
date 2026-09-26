@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: tvmaze-api
+  http:
+    clients:
+      connect-timeout: 3s
+      read-timeout: 5s
+
+server:
+  port: 8080
+
+tvmaze:
+  base-url: https://api.tvmaze.com
+     
+
+
