@@ -10,6 +10,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -32,6 +33,13 @@ private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler
     public ResponseEntity<ErrorResponse> handleExternalService(ExternalServiceException ex, HttpServletRequest request) {
         log.error("Falla en servicio externo: {}", ex.getMessage(), ex);
         return build(HttpStatus.BAD_GATEWAY, "El servicio de TVMaze no esta disponible, intente mas tarde",
+                List.of(), request);
+    }
+
+     @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException ex, HttpServletRequest request) {
+        log.error("Error de acceso a MongoDB", ex);
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "El servicio de datos no esta disponible, intente mas tarde",
                 List.of(), request);
     }
 

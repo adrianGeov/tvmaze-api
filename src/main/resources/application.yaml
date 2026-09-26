@@ -1,6 +1,13 @@
 spring:
   application:
     name: tvmaze-api
+  config:
+    import: optional:file:.env[.properties]
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/tvmaze}
+  data:
+    mongodb:
+      auto-index-creation: true
   http:
     clients:
       connect-timeout: 3s
@@ -11,6 +18,4 @@ server:
 
 tvmaze:
   base-url: https://api.tvmaze.com
-     
-
 

@@ -7,6 +7,7 @@ import com.examen.tvmaze.service.ShowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -98,6 +99,17 @@ public class ShowControllerTest {
     void getShow_idNegativo_regresa400() throws Exception {
         mockMvc.perform(get("/api/shows/-5"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getShow_cuandoMongoFalla_regresa503() throws Exception {
+        when(showService.getShow(1L))
+                .thenThrow(new DataAccessResourceFailureException("mongo caido"));
+
+        mockMvc.perform(get("/api/shows/1"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(content().string(not(containsString("mongo caido"))));
     }
 
 }
