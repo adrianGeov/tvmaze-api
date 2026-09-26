@@ -1,6 +1,7 @@
 package com.examen.tvmaze.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
@@ -25,6 +26,10 @@ public class ShowService {
                 .filter(Objects::nonNull)
                 .map(ShowSummaryResponse::from)
                 .toList();
+    }
+
+    public Map<String, Object> getShow(Long showId) {
+        return tvMazeClient.getShowById(showId);
     }
 
 

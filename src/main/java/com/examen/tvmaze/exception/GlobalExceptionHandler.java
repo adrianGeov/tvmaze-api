@@ -96,6 +96,10 @@ private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler
     }
 
 
+    @ExceptionHandler(ShowNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleShowNotFound(ShowNotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), List.of(), request);
+    }
 
 
 }

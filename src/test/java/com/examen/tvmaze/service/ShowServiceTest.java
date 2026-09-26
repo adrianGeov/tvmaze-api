@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -54,6 +55,14 @@ public class ShowServiceTest {
         when(tvMazeClient.searchShows("zzz")).thenReturn(List.of());
 
         assertThat(showService.searchShows("zzz")).isEmpty();
+    }
+
+    @Test
+    void getShow_delegaAlCliente() {
+        Map<String, Object> fromApi = Map.of("id", 1, "name", "Under the Dome");
+        when(tvMazeClient.getShowById(1L)).thenReturn(fromApi);
+
+        assertThat(showService.getShow(1L)).isEqualTo(fromApi);
     }
 
 }
