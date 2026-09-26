@@ -1,5 +1,6 @@
 package com.examen.tvmaze.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,8 +31,8 @@ public class ShowService {
     private final CommentRepository commentRepository;
 
     public ShowService(TvMazeClient tvMazeClient,
-            ShowCacheRepository showCacheRepository,
-            CommentRepository commentRepository) {
+                       ShowCacheRepository showCacheRepository,
+                       CommentRepository commentRepository) {
         this.tvMazeClient = tvMazeClient;
         this.showCacheRepository = showCacheRepository;
         this.commentRepository = commentRepository;
@@ -56,6 +57,13 @@ public class ShowService {
                 .toList();
     }
 
+    public Map<String, Object> getShowWithComments(Long showId) {
+        // Copia del show para no mezclar los comentarios con los datos de la cache
+        Map<String, Object> show = new LinkedHashMap<>(getShow(showId));
+        show.put("comments", findCommentsByShowId(showId));
+        return show;
+    }
+
     public Map<String, Object> getShow(Long showId) {
         return showCacheRepository.findById(showId)
                 .map(ShowCache::getData)
@@ -69,11 +77,19 @@ public class ShowService {
         return show;
     }
 
+    private List<CommentResponse> findCommentsByShowId(Long showId) {
+        return commentRepository.findByShowIdOrderByCreatedAtDesc(showId).stream()
+                .map(CommentResponse::from)
+                .toList();
+    }
+
     // Una sola consulta a Mongo para todos los shows del resultado (evita N+1)
     private Map<Long, List<CommentResponse>> findCommentsByShowIds(List<Long> showIds) {
         return commentRepository.findByShowIdIn(showIds).stream()
                 .collect(Collectors.groupingBy(Comment::getShowId,
                         Collectors.mapping(CommentResponse::from, Collectors.toList())));
     }
+
+
 
 }

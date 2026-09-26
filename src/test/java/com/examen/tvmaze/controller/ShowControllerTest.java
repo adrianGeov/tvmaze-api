@@ -38,7 +38,7 @@ public class ShowControllerTest {
     @MockitoBean
     private ShowService showService;
 
-   @Test
+    @Test
     void search_regresaArregloDeShowsConComentarios() throws Exception {
         when(showService.searchShows("girls")).thenReturn(List.of(
                 new ShowSummaryResponse(139L, "Girls", "HBO", "<p>Resumen</p>", List.of("Drama"),
@@ -77,18 +77,23 @@ public class ShowControllerTest {
     }
 
     @Test
-    void getShow_regresaShowCompleto() throws Exception {
-        when(showService.getShow(1L)).thenReturn(Map.of("id", 1, "name", "Under the Dome"));
+    void getShow_regresaShowCompletoConComentarios() throws Exception {
+        when(showService.getShowWithComments(1L)).thenReturn(Map.of(
+                "id", 1,
+                "name", "Under the Dome",
+                "comments", List.of(new CommentResponse("Me encanto", 5))));
 
         mockMvc.perform(get("/api/shows/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Under the Dome"));
+                .andExpect(jsonPath("$.name").value("Under the Dome"))
+                .andExpect(jsonPath("$.comments[0].comment").value("Me encanto"))
+                .andExpect(jsonPath("$.comments[0].rating").value(5));
     }
 
     @Test
     void getShow_noExistente_regresa404Estandarizado() throws Exception {
-        when(showService.getShow(999L)).thenThrow(new ShowNotFoundException(999L));
+        when(showService.getShowWithComments(999L)).thenThrow(new ShowNotFoundException(999L));
 
         mockMvc.perform(get("/api/shows/999"))
                 .andExpect(status().isNotFound())
@@ -110,7 +115,7 @@ public class ShowControllerTest {
 
     @Test
     void getShow_cuandoMongoFalla_regresa503() throws Exception {
-        when(showService.getShow(1L))
+        when(showService.getShowWithComments(1L))
                 .thenThrow(new DataAccessResourceFailureException("mongo caido"));
 
         mockMvc.perform(get("/api/shows/1"))

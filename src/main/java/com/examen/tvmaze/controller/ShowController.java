@@ -39,7 +39,7 @@ public class ShowController {
     @GetMapping("/{showId}")
     public ResponseEntity<Map<String, Object>> getShow(
             @PathVariable @Positive(message = "El id del show debe ser positivo") Long showId) {
-        return ResponseEntity.ok(showService.getShow(showId));
+        return ResponseEntity.ok(showService.getShowWithComments(showId));
     }
 
 }

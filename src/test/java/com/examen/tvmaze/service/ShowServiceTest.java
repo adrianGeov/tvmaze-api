@@ -4,6 +4,7 @@ import com.examen.tvmaze.client.dto.TvMazeChannel;
 import com.examen.tvmaze.client.dto.TvMazeClient;
 import com.examen.tvmaze.client.dto.TvMazeSearchResult;
 import com.examen.tvmaze.client.dto.TvMazeShowSummary;
+import com.examen.tvmaze.dto.CommentResponse;
 import com.examen.tvmaze.dto.ShowSummaryResponse;
 import com.examen.tvmaze.exception.ShowNotFoundException;
 import com.examen.tvmaze.model.Comment;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +36,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class ShowServiceTest {
 
-     @Mock
+   @Mock
     private TvMazeClient tvMazeClient;
 
     @Mock
@@ -136,6 +138,34 @@ public class ShowServiceTest {
         assertThatThrownBy(() -> showService.getShow(999L))
                 .isInstanceOf(ShowNotFoundException.class);
         verify(showCacheRepository, never()).save(any());
+    }
+
+    @Test
+    void getShowWithComments_agregaComentariosAlShow() {
+        when(showCacheRepository.findById(1L))
+                .thenReturn(Optional.of(new ShowCache(1L, Map.of("id", 1, "name", "Under the Dome"))));
+        when(commentRepository.findByShowIdOrderByCreatedAtDesc(1L))
+                .thenReturn(List.of(new Comment(1L, "Me encanto", 5)));
+
+        Map<String, Object> result = showService.getShowWithComments(1L);
+
+        assertThat(result).containsEntry("name", "Under the Dome");
+        List<?> comments = (List<?>) result.get("comments");
+        assertThat(comments).hasSize(1);
+        CommentResponse comment = (CommentResponse) comments.get(0);
+        assertThat(comment.getComment()).isEqualTo("Me encanto");
+        assertThat(comment.getRating()).isEqualTo(5);
+    }
+
+    @Test
+    void getShowWithComments_noModificaLosDatosDeLaCache() {
+        Map<String, Object> cachedData = new HashMap<>(Map.of("id", 1, "name", "Under the Dome"));
+        when(showCacheRepository.findById(1L)).thenReturn(Optional.of(new ShowCache(1L, cachedData)));
+        when(commentRepository.findByShowIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
+
+        showService.getShowWithComments(1L);
+
+        assertThat(cachedData).doesNotContainKey("comments");
     }
 
 }
